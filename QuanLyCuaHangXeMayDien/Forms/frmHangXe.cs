@@ -1,0 +1,122 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Forms;
+using QuanLyCuaHangXeMayDien.Data;
+
+namespace QuanLyCuaHangXeMayDien.Forms
+{
+    public partial class frmHangXe : Form
+    {
+        QLXMDDbContext context = new QLXMDDbContext();
+        bool xuLyThem = false;
+        int id;
+
+        public frmHangXe()
+        {
+            InitializeComponent();
+        }
+
+        private void BatTatChucNang(bool giaTri)
+        {
+            btnLuu.Enabled = giaTri;
+            btnHuyBo.Enabled = giaTri;
+            txtTenHangXe.Enabled = giaTri;
+            btnThem.Enabled = !giaTri;
+            btnSua.Enabled = !giaTri;
+            btnXoa.Enabled = !giaTri;
+        }
+
+        private void frmHangXe_Load(object sender, EventArgs e)
+        {
+            BatTatChucNang(false);
+
+            var nsx = context.NhaSanXuats.ToList();
+
+            BindingSource bindingSource = new BindingSource();
+            bindingSource.DataSource = nsx;
+
+            txtTenHangXe.DataBindings.Clear();
+            // Nếu trong file NhaSanXuat.cs bạn đặt tên biến khác thì sửa lại chữ "TenNhaSanXuat" nhé
+            txtTenHangXe.DataBindings.Add("Text", bindingSource, "TenNhaSanXuat", false, DataSourceUpdateMode.Never);
+
+            dataGridView.DataSource = bindingSource;
+        }
+
+        private void btnThem_Click(object sender, EventArgs e)
+        {
+            xuLyThem = true;
+            BatTatChucNang(true);
+            txtTenHangXe.Clear();
+        }
+
+        private void btnSua_Click(object sender, EventArgs e)
+        {
+            xuLyThem = false;
+            BatTatChucNang(true);
+
+            if (dataGridView.CurrentRow != null && dataGridView.CurrentRow.Cells["ID"].Value != null)
+            {
+                id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
+            }
+        }
+
+        private void btnLuu_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtTenHangXe.Text))
+            {
+                MessageBox.Show("Vui lòng nhập tên hãng xe?", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+                if (xuLyThem)
+                {
+                    var nsx = new NhaSanXuat();
+                    nsx.TenNhaSanXuat = txtTenHangXe.Text;
+                    context.NhaSanXuats.Add(nsx);
+                    context.SaveChanges();
+                }
+                else
+                {
+                    var nsx = context.NhaSanXuats.Find(id);
+                    if (nsx != null)
+                    {
+                        nsx.TenNhaSanXuat = txtTenHangXe.Text;
+                        context.NhaSanXuats.Update(nsx);
+                        context.SaveChanges();
+                    }
+                }
+                frmHangXe_Load(sender, e);
+            }
+        }
+
+        private void btnXoa_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show("Xác nhận xóa hãng xe này?", "Xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                if (dataGridView.CurrentRow != null && dataGridView.CurrentRow.Cells["ID"].Value != null)
+                {
+                    id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
+                    var nsx = context.NhaSanXuats.Find(id);
+
+                    if (nsx != null)
+                    {
+                        context.NhaSanXuats.Remove(nsx);
+                        context.SaveChanges();
+                        frmHangXe_Load(sender, e);
+                    }
+                }
+            }
+        }
+
+        private void btnHuyBo_Click(object sender, EventArgs e)
+        {
+            frmHangXe_Load(sender, e);
+        }
+
+        private void btnThoat_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+    }
+}
